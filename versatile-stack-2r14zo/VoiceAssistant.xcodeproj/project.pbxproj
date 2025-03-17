@@ -10,7 +10,7 @@
 		B577A98A2D16796000B59A0B /* LiveKitKrispNoiseFilter in Frameworks */ = {isa = PBXBuildFile; platformFilters = (ios, macos, ); productRef = B577A9892D16796000B59A0B /* LiveKitKrispNoiseFilter */; };
 		B5E1B90F2D14E9EC00A38CB6 /* LiveKitComponents in Frameworks */ = {isa = PBXBuildFile; productRef = B5E1B90E2D14E9EC00A38CB6 /* LiveKitComponents */; };
 		B5E1B9122D14E9F500A38CB6 /* LiveKit in Frameworks */ = {isa = PBXBuildFile; productRef = B5E1B9112D14E9F500A38CB6 /* LiveKit */; };
-		B5E46D202D496CD200ACC2E6 /* LiveKitKrispNoiseFilter in Frameworks */ = {isa = PBXBuildFile; productRef = B5E46D1F2D496CD200ACC2E6 /* LiveKitKrispNoiseFilter */; };
+		B5E46D202D496CD200ACC2E6 /* LiveKitKrispNoiseFilter in Frameworks */ = {isa = PBXBuildFile; platformFilters = (ios, macos, ); productRef = B5E46D1F2D496CD200ACC2E6 /* LiveKitKrispNoiseFilter */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -21,6 +21,8 @@
 		B577A91F2D15FDB800B59A0B /* Exceptions for "VoiceAssistant" folder in "VoiceAssistant" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				.env.example.xcconfig,
+				.env.xcconfig,
 				Info.plist,
 				VoiceAssistant.xcconfig,
 			);
@@ -284,7 +286,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"VoiceAssistant/Preview Content\"";
-				DEVELOPMENT_TEAM = 47BX55MGYF;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -308,7 +309,6 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.2;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.livekit.example.VoiceAssistant.pn;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
@@ -330,7 +330,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"VoiceAssistant/Preview Content\"";
-				DEVELOPMENT_TEAM = 47BX55MGYF;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -354,7 +353,6 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.2;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.livekit.example.VoiceAssistant.pn;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
