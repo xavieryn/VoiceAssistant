@@ -7,6 +7,8 @@ import SwiftUI
 /// You can customize this component to fit your app's needs
 struct ControlBar: View {
 
+    @EnvironmentObject private var uiClient: UIUpdateClient
+    
     // We injected these into the environment in VoiceAssistantApp.swift and ContentView.swift
     @EnvironmentObject private var tokenService: TokenService
     @EnvironmentObject private var room: Room
