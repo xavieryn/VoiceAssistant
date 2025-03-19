@@ -1,68 +1,49 @@
+
+
 import SwiftUI
 import LiveKit
 
 struct WeatherView: View {
+    @State private var weatherText: String = "Waiting for weather update..."
     @EnvironmentObject private var room: Room
-    @State private var hasRecipient: Bool = false
-
-    func registerRpcMethod() {
-        Task {
-            await room.localParticipant.registerRpcMethod("greet") { data in
-                print("Received greeting!")
-                return "Hello there!"
-            }
-        }
-    }
-
-    func performGreetingRpc() {
-        Task {
-            guard let firstParticipant = room.remoteParticipants.values.first else {
-                print("No remote participant found")
-                return
-            }
-
-            do {
-                let response: String = try await room.localParticipant.performRpc(
-                    destinationIdentity: firstParticipant.identity!,
-                    method: "greet",
-                    payload: "Hello from RPC!"
-                )
-                print("RPC response: \(response)")
-            } catch {
-                print("RPC call failed: \(error)")
-            }
-        }
-    }
-
+    
     var body: some View {
         VStack {
-            Text("WeatherView")
+            Text(weatherText)
                 .font(.title)
                 .padding()
-
-            if !room.remoteParticipants.isEmpty {
-                VStack {
-                    Text("Connected with remote participant")
-                        .padding(.bottom)
-
-                    Button("Send RPC Greeting") {
-                        performGreetingRpc()
-                    }
-                    .buttonStyle(.borderedProminent)
-                }
-            } else {
-                Text("Waiting for remote participant to join...")
-                    .foregroundColor(.secondary)
-            }
         }
-        .padding()
         .onAppear {
-            registerRpcMethod()
-        }
-        .onChange(of: room.remoteParticipants.count) { newCount in
-            DispatchQueue.main.async {
-                hasRecipient = newCount > 0
+            Task {
+                await registerRpcMethod()
             }
+        }
+    }
+    func registerRpcMethod() async {
+        await room.localParticipant.registerRpcMethod("display_weather") { data in
+            print("Received weather data: \(data)")  // Debugging line to see data
+            
+            guard let jsonString = data as? String,
+                  let jsonData = jsonString.data(using: .utf8),
+                  let weatherInfo = try? JSONDecoder().decode(WeatherData.self, from: jsonData) else {
+                print("Failed to parse weather data")
+                return "Error"
+            }
+            
+            DispatchQueue.main.async {
+                self.weatherText = "Weather in \(weatherInfo.location): \(weatherInfo.weather)"
+            }
+            
+            print("Updated weather: \(self.weatherText)")  // Debugging line to see updated value
+            return "Weather updated successfully"
         }
     }
 }
+
+// Define struct for JSON decoding
+struct WeatherData: Codable {
+    let location: String
+    let weather: String
+}
+
+
