@@ -1,5 +1,6 @@
 import LiveKit
 import SwiftUI
+
 #if os(iOS) || os(macOS)
 import LiveKitKrispNoiseFilter
 #endif
@@ -22,19 +23,20 @@ struct ContentView: View {
         #endif
     }
     
-    
     var body: some View {
         VStack(spacing: 24) {
-            StatusView()
+            StatusView() // the 5 dots
                 .frame(height: 256)
                 .frame(maxWidth: 512)
+            WeatherView()
             
-            ControlBar()
+            ControlBar() // button ui for connecting/disconnecting
         }
         .padding()
         .environmentObject(room)
         .environmentObject(uiClient) // Make UIUpdateClient available to child views
         .background(uiClient.backgroundColor) // Set the background color from WebSocket updates
+        // SEE IF THIS WORKS
         .onAppear {
             #if os(iOS) || os(macOS)
             room.add(delegate: krispProcessor)
