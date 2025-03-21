@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import Combine
-import LiveKit
 
 class UIUpdateClient: ObservableObject {
     private var webSocket: URLSessionWebSocketTask?
@@ -10,109 +9,105 @@ class UIUpdateClient: ObservableObject {
     
     @Published var backgroundColor: Color = .white
     @Published var textSize: CGFloat = 16
-    var room: Room?
-
-    init(room: Room? = nil) {
-        self.room = room
-        print("Registering RPC method for change_background...") 
-        registerRpcMethod()
-    }
-
-    func registerRpcMethod() {
-        guard let room = room else {
-            print("Room instance is nil, cannot register RPC method.")
-            return
-        }
-        
-        Task {
-            await room.localParticipant.registerRpcMethod("change_background") { data in
-                print("Received RPC for background change: \(data)")
-
-                // Convert data to string for parsing
-                let dataString = "\(data)"
-                print(data)
-                
-                guard let payloadStart = dataString.range(of: "payload: \""),
-                      let payloadEnd = dataString.range(of: "\", responseTimeout") else {
-                    print("Failed to locate payload in string")
-                    return "Error: Payload not found"
-                }
-                
-                let startIndex = payloadStart.upperBound
-                let endIndex = payloadEnd.lowerBound
-                let payloadString = String(dataString[startIndex..<endIndex])
-                    .replacingOccurrences(of: "\\\"", with: "\"")
-                    .replacingOccurrences(of: "\\\\", with: "\\")
-
-                print("Extracted payload: \(payloadString)")
-                
-                guard let jsonData = payloadString.data(using: .utf8) else {
-                    print("Failed to convert payload to data")
-                    return "Error: Data conversion failed"
-                }
-
-                do {
-                    let colorInfo = try JSONDecoder().decode(ColorData.self, from: jsonData)
-                    
-                    DispatchQueue.main.async {
-                        self.backgroundColor = self.color(from: colorInfo.color)
-                    }
-                    
-                    print("Updated background color: \(colorInfo.color)")
-                    return "Background color updated successfully"
-                } catch {
-                    print("JSON decoding error: \(error)")
-                    return "Error: \(error.localizedDescription)"
-                }
-            }
-        }
-    }
+    
     func connect() {
         guard webSocket == nil else { return }
-
+        
         session = URLSession(configuration: .default)
-        guard let url = URL(string: "wss://pmi-ios-9dsuqmkw.livekit.cloud/ws") else { return } // Replace with your actual WebSocket URL
+        // Change this to your actual server IP address when not testing on localhost
+        guard let url = URL(string: "wss://pmi-ios-9dsuqmkw.livekit.cloud/ws") else { return }
 
         webSocket = session?.webSocketTask(with: url)
         webSocket?.resume()
-
+        
         receiveMessage()
+        
         print("Connected to UI update server")
     }
-
+    
     func disconnect() {
         webSocket?.cancel(with: .normalClosure, reason: nil)
         webSocket = nil
         session = nil
-
+        
+        // Stop reconnect timer if it's running
         reconnectTimer?.invalidate()
         reconnectTimer = nil
-
+        
         print("Disconnected from UI update server")
     }
-
+    
     private func receiveMessage() {
-        webSocket?.receive { result in
+        webSocket?.receive { [weak self] result in
             switch result {
-            case .failure(let error):
-                print("WebSocket error: \(error)")
             case .success(let message):
                 switch message {
                 case .string(let text):
                     print("Received message: \(text)")
+                    self?.handleMessage(text)
                 case .data(let data):
-                    print("Received data: \(data)")
+                    if let text = String(data: data, encoding: .utf8) {
+                        print("Received data: \(text)")
+                        self?.handleMessage(text)
+                    }
                 @unknown default:
-                    fatalError()
+                    break
                 }
+                
+                // Continue receiving messages
+                self?.receiveMessage()
+                
+            case .failure(let error):
+                print("WebSocket error: \(error)")
+                self?.scheduleReconnect()
             }
-
-            self.receiveMessage() // Keep receiving messages
         }
     }
-
-
+    
+    private func scheduleReconnect() {
+        // Disconnect current socket if any
+        webSocket?.cancel(with: .abnormalClosure, reason: nil)
+        webSocket = nil
+        
+        // Schedule reconnect after 5 seconds
+        DispatchQueue.main.async {
+            self.reconnectTimer?.invalidate()
+            self.reconnectTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: false) { [weak self] _ in
+                self?.connect()
+            }
+        }
+    }
+    
+    private func handleMessage(_ text: String) {
+        guard let data = text.data(using: .utf8) else {
+            print("Failed to convert message to data")
+            return
+        }
+        
+        do {
+            let message = try JSONDecoder().decode(UIUpdateMessage.self, from: data)
+            
+            DispatchQueue.main.async {
+                switch message.type {
+                case "change_background":
+                    if let colorString = message.data["color"] as? String {
+                        self.backgroundColor = self.color(from: colorString)
+                    }
+                case "change_text_size":
+                    if let sizeString = message.data["size"] as? String {
+                        self.textSize = self.fontSize(from: sizeString)
+                    }
+                default:
+                    print("Unknown message type: \(message.type)")
+                }
+            }
+        } catch {
+            print("Failed to decode message: \(error)")
+        }
+    }
+    
     private func color(from string: String) -> Color {
+        // Handle common color names
         switch string.lowercased() {
         case "red": return .red
         case "blue": return .blue
@@ -124,6 +119,7 @@ class UIUpdateClient: ObservableObject {
         case "white": return .white
         case "gray", "grey": return .gray
         default:
+            // Try to parse as hex
             if string.hasPrefix("#") {
                 let hex = string.dropFirst()
                 var rgbValue: UInt64 = 0
@@ -138,9 +134,58 @@ class UIUpdateClient: ObservableObject {
             return .white
         }
     }
+    
+    private func fontSize(from string: String) -> CGFloat {
+        switch string.lowercased() {
+        case "small": return 12
+        case "medium": return 16
+        case "large": return 20
+        case "xlarge": return 24
+        default: return 16
+        }
+    }
 }
 
-// Define struct for JSON decoding
-struct ColorData: Codable {
-    let color: String
+
+// Simple decodable structure for UI update messages
+struct UIUpdateMessage: Decodable {
+    struct DataValue: Decodable {
+        let value: Any
+        
+        init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            
+            if let string = try? container.decode(String.self) {
+                value = string
+            } else if let int = try? container.decode(Int.self) {
+                value = int
+            } else if let double = try? container.decode(Double.self) {
+                value = double
+            } else if let bool = try? container.decode(Bool.self) {
+                value = bool
+            } else if container.decodeNil() {
+                value = NSNull()
+            } else {
+                throw DecodingError.dataCorruptedError(
+                    in: container,
+                    debugDescription: "Cannot decode value"
+                )
+            }
+        }
+    }
+    
+    let type: String
+    let data: [String: Any]
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        type = try container.decode(String.self, forKey: .type)
+        
+        let dataContainer = try container.decode([String: DataValue].self, forKey: .data)
+        data = dataContainer.mapValues { $0.value }
+    }
+    
+    private enum CodingKeys: String, CodingKey {
+        case type, data
+    }
 }
