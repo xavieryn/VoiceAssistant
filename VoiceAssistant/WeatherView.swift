@@ -3,9 +3,9 @@ import LiveKit
 
 struct WeatherView: View {
     @State private var weatherText: String = "Waiting for weather update..."
-    @State private var backgroundColor: Color = .white  // Default background color
     @EnvironmentObject private var room: Room
-    
+    @EnvironmentObject private var uiClient: UIUpdateClient  // Use shared background color state
+
     var body: some View {
         VStack {
             Text(weatherText)
@@ -13,7 +13,7 @@ struct WeatherView: View {
                 .padding()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(backgroundColor)  // Apply dynamic background color
+        .background(uiClient.backgroundColor) // Apply background color globally
         .onAppear {
             print("WeatherView appeared, registering RPC methods")
             
@@ -24,9 +24,11 @@ struct WeatherView: View {
     }
     
     func registerRpcMethods() async {
+        // **Weather Data RPC**
         await room.localParticipant.registerRpcMethod("display_weather") { data in
             print("Received weather data: \(data)")
             
+            // Extract JSON payload
             guard let payloadStart = "\(data)".range(of: "payload: \""),
                   let payloadEnd = "\(data)".range(of: "\", responseTimeout") else {
                 print("Failed to locate payload in string")
@@ -59,7 +61,7 @@ struct WeatherView: View {
             }
         }
         
-        // **Register RPC method for changing background color**
+        // **Background Color Change RPC**
         await room.localParticipant.registerRpcMethod("change_background") { data in
             print("Received background color data: \(data)")
 
@@ -85,7 +87,7 @@ struct WeatherView: View {
             do {
                 let colorInfo = try JSONDecoder().decode(ColorData.self, from: jsonData)
                 DispatchQueue.main.async {
-                    self.backgroundColor = self.colorFromName(colorInfo.color)
+                    self.uiClient.updateBackgroundColor(colorInfo.color) // Update UI background
                 }
                 print("Updated background color to: \(colorInfo.color)")
                 return "Background color updated successfully"
@@ -95,26 +97,9 @@ struct WeatherView: View {
             }
         }
     }
-    
-    // Convert a color name string into a SwiftUI Color
-    func colorFromName(_ name: String) -> Color {
-        switch name.lowercased() {
-            case "red": return .red
-            case "blue": return .blue
-            case "green": return .green
-            case "yellow": return .yellow
-            case "black": return .black
-            case "white": return .white
-            case "gray": return .gray
-            case "orange": return .orange
-            case "purple": return .purple
-            case "pink": return .pink
-            default: return .white // Default to white if unrecognized
-        }
-    }
 }
 
-// Structs for JSON decoding
+// Define structs for JSON decoding
 struct WeatherData: Codable {
     let location: String
     let weather: String

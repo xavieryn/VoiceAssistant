@@ -10,15 +10,13 @@ struct ContentView: View {
     @StateObject private var room = Room()
     @StateObject private var uiClient = UIUpdateClient()
     
-   
-    
     // Krisp is available only on iOS and macOS right now
     #if os(iOS) || os(macOS)
     private let krispProcessor = LiveKitKrispNoiseFilter()
     #endif
     
     init() {
-        print("ContentView initialized") // Ensures something prints
+        print("ContentView initialized")
         NSLog("This is a test log message")
 
         #if os(iOS) || os(macOS)
@@ -32,15 +30,12 @@ struct ContentView: View {
                 .frame(height: 256)
                 .frame(maxWidth: 512)
             WeatherView()
-            
-            
-            ControlBar() // button ui for connecting/disconnecting
+            ControlBar() // button UI for connecting/disconnecting
         }
         .padding()
         .environmentObject(room)
         .environmentObject(uiClient) // Make UIUpdateClient available to child views
-        .background(uiClient.backgroundColor) // Set the background color from WebSocket updates
-        // SEE IF THIS WORKS
+        .background(uiClient.backgroundColor) // **Apply global background color**
         .onAppear {
             #if os(iOS) || os(macOS)
             room.add(delegate: krispProcessor)
@@ -57,6 +52,5 @@ struct ContentView: View {
         }
     }
 }
-
 
 

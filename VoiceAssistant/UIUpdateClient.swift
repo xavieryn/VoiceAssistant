@@ -16,7 +16,7 @@ class UIUpdateClient: ObservableObject {
         session = URLSession(configuration: .default)
         // Change this to your actual server IP address when not testing on localhost
         guard let url = URL(string: "wss://pmi-ios-9dsuqmkw.livekit.cloud/ws") else { return }
-
+        
         webSocket = session?.webSocketTask(with: url)
         webSocket?.resume()
         
@@ -44,11 +44,9 @@ class UIUpdateClient: ObservableObject {
                 switch message {
                 case .string(let text):
                     print("Received message: \(text)")
-                    self?.handleMessage(text)
                 case .data(let data):
                     if let text = String(data: data, encoding: .utf8) {
                         print("Received data: \(text)")
-                        self?.handleMessage(text)
                     }
                 @unknown default:
                     break
@@ -78,35 +76,14 @@ class UIUpdateClient: ObservableObject {
         }
     }
     
-    private func handleMessage(_ text: String) {
-        guard let data = text.data(using: .utf8) else {
-            print("Failed to convert message to data")
-            return
-        }
-        
-        do {
-            let message = try JSONDecoder().decode(UIUpdateMessage.self, from: data)
-            
-            DispatchQueue.main.async {
-                switch message.type {
-                case "change_background":
-                    if let colorString = message.data["color"] as? String {
-                        self.backgroundColor = self.color(from: colorString)
-                    }
-                case "change_text_size":
-                    if let sizeString = message.data["size"] as? String {
-                        self.textSize = self.fontSize(from: sizeString)
-                    }
-                default:
-                    print("Unknown message type: \(message.type)")
-                }
-            }
-        } catch {
-            print("Failed to decode message: \(error)")
+    func updateBackgroundColor(_ colorString: String) {
+        print(colorString)
+        DispatchQueue.main.async {
+            self.backgroundColor = self.color(from: colorString) ?? .black
         }
     }
     
-    private func color(from string: String) -> Color {
+    private func color(from string: String) -> Color? {
         // Handle common color names
         switch string.lowercased() {
         case "red": return .red
@@ -121,7 +98,7 @@ class UIUpdateClient: ObservableObject {
         default:
             // Try to parse as hex
             if string.hasPrefix("#") {
-                let hex = string.dropFirst()
+                let hex = string.dropFirst() // Remove the '#' symbol
                 var rgbValue: UInt64 = 0
                 Scanner(string: String(hex)).scanHexInt64(&rgbValue)
                 
@@ -131,9 +108,10 @@ class UIUpdateClient: ObservableObject {
                 
                 return Color(red: r, green: g, blue: b)
             }
-            return .white
+            return nil // Return nil if not a valid named color or hex
         }
     }
+    
     
     private func fontSize(from string: String) -> CGFloat {
         switch string.lowercased() {
@@ -144,48 +122,49 @@ class UIUpdateClient: ObservableObject {
         default: return 16
         }
     }
-}
-
-
-// Simple decodable structure for UI update messages
-struct UIUpdateMessage: Decodable {
-    struct DataValue: Decodable {
-        let value: Any
-        
-        init(from decoder: Decoder) throws {
-            let container = try decoder.singleValueContainer()
+    
+    
+    
+    // Simple decodable structure for UI update messages
+    struct UIUpdateMessage: Decodable {
+        struct DataValue: Decodable {
+            let value: Any
             
-            if let string = try? container.decode(String.self) {
-                value = string
-            } else if let int = try? container.decode(Int.self) {
-                value = int
-            } else if let double = try? container.decode(Double.self) {
-                value = double
-            } else if let bool = try? container.decode(Bool.self) {
-                value = bool
-            } else if container.decodeNil() {
-                value = NSNull()
-            } else {
-                throw DecodingError.dataCorruptedError(
-                    in: container,
-                    debugDescription: "Cannot decode value"
-                )
+            init(from decoder: Decoder) throws {
+                let container = try decoder.singleValueContainer()
+                
+                if let string = try? container.decode(String.self) {
+                    value = string
+                } else if let int = try? container.decode(Int.self) {
+                    value = int
+                } else if let double = try? container.decode(Double.self) {
+                    value = double
+                } else if let bool = try? container.decode(Bool.self) {
+                    value = bool
+                } else if container.decodeNil() {
+                    value = NSNull()
+                } else {
+                    throw DecodingError.dataCorruptedError(
+                        in: container,
+                        debugDescription: "Cannot decode value"
+                    )
+                }
             }
         }
-    }
-    
-    let type: String
-    let data: [String: Any]
-    
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        type = try container.decode(String.self, forKey: .type)
         
-        let dataContainer = try container.decode([String: DataValue].self, forKey: .data)
-        data = dataContainer.mapValues { $0.value }
-    }
-    
-    private enum CodingKeys: String, CodingKey {
-        case type, data
+        let type: String
+        let data: [String: Any]
+        
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            type = try container.decode(String.self, forKey: .type)
+            
+            let dataContainer = try container.decode([String: DataValue].self, forKey: .data)
+            data = dataContainer.mapValues { $0.value }
+        }
+        
+        private enum CodingKeys: String, CodingKey {
+            case type, data
+        }
     }
 }
