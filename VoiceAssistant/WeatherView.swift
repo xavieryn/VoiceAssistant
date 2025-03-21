@@ -27,7 +27,13 @@ struct WeatherView: View {
             // Based on the output format, extract the payload directly
             let dataString = "\(data)"
             
+            //RpcInvocationData(requestId: "3527ba05-2f01-483b-86bf-0157869a200e", callerIdentity: agent-AJ_vwCeyz3wWQHz, payload: "{\"location\": \"Boston, Massachusetts\", \"weather\": \"The weather in Boston, Massachusetts is Partly cloudy +46\\u00b0F.\"}", responseTimeout: 8.0)
+            
+            
+            
             // Find the payload section between 'payload: "' and '", responseTimeout'
+            
+            // {\"location\": \"Boston, Massachusetts\", \"weather\": \"The weather in Boston, Massachusetts is Partly cloudy +46\\u00b0F.\"}
             guard let payloadStart = dataString.range(of: "payload: \""),
                   let payloadEnd = dataString.range(of: "\", responseTimeout") else {
                 print("Failed to locate payload in string")
@@ -63,7 +69,10 @@ struct WeatherView: View {
                 return "Error: \(error.localizedDescription)"
             }
         }
+        
     }
+    
+    
 }
 
 // Define struct for JSON decoding
