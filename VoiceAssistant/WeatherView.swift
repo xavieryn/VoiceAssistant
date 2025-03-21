@@ -1,5 +1,3 @@
-
-
 import SwiftUI
 import LiveKit
 
@@ -14,28 +12,56 @@ struct WeatherView: View {
                 .padding()
         }
         .onAppear {
+            print("WeatherView appeared, registering RPC method")
+            
             Task {
                 await registerRpcMethod()
             }
         }
     }
+    
     func registerRpcMethod() async {
         await room.localParticipant.registerRpcMethod("display_weather") { data in
-            print("Received weather data: \(data)")  // Debugging line to see data
+            print("Received weather data: \(data)")
             
-            guard let jsonString = data as? String,
-                  let jsonData = jsonString.data(using: .utf8),
-                  let weatherInfo = try? JSONDecoder().decode(WeatherData.self, from: jsonData) else {
-                print("Failed to parse weather data")
-                return "Error"
+            // Based on the output format, extract the payload directly
+            let dataString = "\(data)"
+            
+            // Find the payload section between 'payload: "' and '", responseTimeout'
+            guard let payloadStart = dataString.range(of: "payload: \""),
+                  let payloadEnd = dataString.range(of: "\", responseTimeout") else {
+                print("Failed to locate payload in string")
+                return "Error: Payload not found"
             }
             
-            DispatchQueue.main.async {
-                self.weatherText = "Weather in \(weatherInfo.location): \(weatherInfo.weather)"
+            // Extract the payload string and clean it up
+            let startIndex = payloadStart.upperBound
+            let endIndex = payloadEnd.lowerBound
+            let payloadString = String(dataString[startIndex..<endIndex])
+                .replacingOccurrences(of: "\\\"", with: "\"")
+                .replacingOccurrences(of: "\\\\", with: "\\")
+            
+            print("Extracted payload: \(payloadString)")
+            
+            // Parse the clean JSON
+            guard let jsonData = payloadString.data(using: .utf8) else {
+                print("Failed to convert to data")
+                return "Error: Data conversion failed"
             }
             
-            print("Updated weather: \(self.weatherText)")  // Debugging line to see updated value
-            return "Weather updated successfully"
+            do {
+                let weatherInfo = try JSONDecoder().decode(WeatherData.self, from: jsonData)
+                
+                DispatchQueue.main.async {
+                    self.weatherText = weatherInfo.weather
+                }
+                
+                print("Updated weather: \(self.weatherText)")
+                return "Weather updated successfully"
+            } catch {
+                print("JSON decoding error: \(error)")
+                return "Error: \(error.localizedDescription)"
+            }
         }
     }
 }
@@ -45,5 +71,3 @@ struct WeatherData: Codable {
     let location: String
     let weather: String
 }
-
-

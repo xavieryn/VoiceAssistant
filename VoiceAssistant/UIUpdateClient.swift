@@ -15,8 +15,8 @@ class UIUpdateClient: ObservableObject {
         
         session = URLSession(configuration: .default)
         // Change this to your actual server IP address when not testing on localhost
-        guard let url = URL(string: "ws://localhost:8765") else { return }
-        
+        guard let url = URL(string: "wss://pmi-ios-9dsuqmkw.livekit.cloud/ws") else { return }
+
         webSocket = session?.webSocketTask(with: url)
         webSocket?.resume()
         

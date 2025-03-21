@@ -18,6 +18,9 @@ struct ContentView: View {
     #endif
     
     init() {
+        print("ContentView initialized") // Ensures something prints
+        NSLog("This is a test log message")
+
         #if os(iOS) || os(macOS)
         AudioManager.shared.capturePostProcessingDelegate = krispProcessor
         #endif
@@ -30,6 +33,7 @@ struct ContentView: View {
                 .frame(maxWidth: 512)
             WeatherView()
             
+            
             ControlBar() // button ui for connecting/disconnecting
         }
         .padding()
@@ -41,6 +45,7 @@ struct ContentView: View {
             #if os(iOS) || os(macOS)
             room.add(delegate: krispProcessor)
             #endif
+            print("hi")
             
             // Connect to WebSocket server for UI updates
             uiClient.connect()
@@ -48,6 +53,7 @@ struct ContentView: View {
         .onDisappear {
             // Disconnect when view disappears
             uiClient.disconnect()
+            print("bye")
         }
     }
 }
