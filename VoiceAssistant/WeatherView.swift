@@ -24,7 +24,7 @@ struct WeatherView: View {
     }
     
     func registerRpcMethods() async {
-        // **Weather Data RPC**
+        // Weather Data RPC
         await room.localParticipant.registerRpcMethod("display_weather") { data in
             print("Received weather data: \(data)")
             

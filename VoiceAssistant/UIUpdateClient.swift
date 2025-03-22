@@ -11,10 +11,16 @@ class UIUpdateClient: ObservableObject {
     @Published var textSize: CGFloat = 16
     
     func connect() {
+        /*
+            Connects to server (not local host, but the livekit websockets server)
+            The server I run then communicates with that server. It is like there is two middle men, 
+            and the first one is the websocket server, and the second one is the local, and the third is the realtime openai api
+            (https://docs.livekit.io/agents/overview/)
+        */
         guard webSocket == nil else { return }
         
         session = URLSession(configuration: .default)
-        // Change this to your actual server IP address when not testing on localhost
+        // I wonder if it is okay that this is public lol
         guard let url = URL(string: "wss://pmi-ios-9dsuqmkw.livekit.cloud/ws") else { return }
         
         webSocket = session?.webSocketTask(with: url)
@@ -26,6 +32,9 @@ class UIUpdateClient: ObservableObject {
     }
     
     func disconnect() {
+        /*
+            Bye bye websocket connection
+        */
         webSocket?.cancel(with: .normalClosure, reason: nil)
         webSocket = nil
         session = nil
@@ -76,14 +85,29 @@ class UIUpdateClient: ObservableObject {
         }
     }
     
+    
+    
     func updateBackgroundColor(_ colorString: String) {
+        /*
+             Args (str): color (in name form (eg. blue, brown), not hexadecimal)
+
+             Changes the background based off the input from the user (look at python agent to learn more about the function)
+             Global variable (background color, so when it changes, it will actually affect the ContentView (where it is called)
+             IN THE FUTURE WE CAN ASK IT TO PASS A HEXADECIMAL, SO IT CAN BE ANY COLOR RATHER THAN A SWITCH AND CASE
+        */
         print(colorString)
         DispatchQueue.main.async {
-            self.backgroundColor = self.color(from: colorString) ?? .black
+            self.backgroundColor = self.color(from: colorString) ?? .black // black means you won't be able to see anything lol, so its broken
         }
     }
     
     private func color(from string: String) -> Color? {
+        /*
+         Args (str): color (in name form (eg. blue, brown), not hexadecimal)
+         
+         IN THE FUTURE WE CAN ASK IT TO PASS A HEXADECIMAL, SO IT CAN BE ANY COLOR RATHER THAN A SWITCH AND CASE
+         */
+        
         // Handle common color names
         switch string.lowercased() {
         case "red": return .red
@@ -96,7 +120,7 @@ class UIUpdateClient: ObservableObject {
         case "white": return .white
         case "gray", "grey": return .gray
         default:
-            // Try to parse as hex
+            // Try to parse as hex (currently not doing it)
             if string.hasPrefix("#") {
                 let hex = string.dropFirst() // Remove the '#' symbol
                 var rgbValue: UInt64 = 0
@@ -112,7 +136,7 @@ class UIUpdateClient: ObservableObject {
         }
     }
     
-    
+    // future function for changing font based on user saying it is too small
     private func fontSize(from string: String) -> CGFloat {
         switch string.lowercased() {
         case "small": return 12

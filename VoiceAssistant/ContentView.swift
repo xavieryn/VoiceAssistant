@@ -7,17 +7,16 @@ import LiveKitKrispNoiseFilter
 
 
 struct ContentView: View {
-    @StateObject private var room = Room()
-    @StateObject private var uiClient = UIUpdateClient()
+    @StateObject private var room = Room() // the server the user is in
+    @StateObject private var uiClient = UIUpdateClient() // ui styling (put front end aesthetics changes here)
     
-    // Krisp is available only on iOS and macOS right now
+    // Krisp is available only on iOS and macOS right now (helps with noise cancellation)
     #if os(iOS) || os(macOS)
     private let krispProcessor = LiveKitKrispNoiseFilter()
     #endif
     
     init() {
         print("ContentView initialized")
-        NSLog("This is a test log message")
 
         #if os(iOS) || os(macOS)
         AudioManager.shared.capturePostProcessingDelegate = krispProcessor
@@ -33,9 +32,9 @@ struct ContentView: View {
             ControlBar() // button UI for connecting/disconnecting
         }
         .padding()
-        .environmentObject(room)
+        .environmentObject(room) // Makes sure room is accessible to all child views
         .environmentObject(uiClient) // Make UIUpdateClient available to child views
-        .background(uiClient.backgroundColor) // **Apply global background color**
+        .background(uiClient.backgroundColor) // Apply global background color
         .onAppear {
             #if os(iOS) || os(macOS)
             room.add(delegate: krispProcessor)

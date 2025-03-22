@@ -15,7 +15,6 @@ struct StatusView: View {
                 return participant
             }
         }
-        
         return nil
     }
     
@@ -35,7 +34,7 @@ struct StatusView: View {
             .id(agentParticipant?.firstAudioTrack?.id)
             
             Text("Your status content")
-                .font(.system(size: uiClient.textSize))
+                .font(.system(size: uiClient.textSize)) // global variable (text size change)
         }
     }
 }

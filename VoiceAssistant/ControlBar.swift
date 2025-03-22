@@ -3,21 +3,17 @@ import LiveKit
 import LiveKitComponents
 import SwiftUI
 
-/// The ControlBar component handles connection, disconnection, and audio controls
-/// You can customize this component to fit your app's needs
+
 struct ControlBar: View {
 
     @EnvironmentObject private var uiClient: UIUpdateClient
     
-    // We injected these into the environment in VoiceAssistantApp.swift and ContentView.swift
     @EnvironmentObject private var tokenService: TokenService
     @EnvironmentObject private var room: Room
 
-    // Private internal state
     @State private var isConnecting: Bool = false
     @State private var isDisconnecting: Bool = false
 
-    // Namespace for view transitions
     @Namespace private var animation
 
 
@@ -69,16 +65,16 @@ struct ControlBar: View {
                     LocalAudioVisualizer(track: room.localParticipant.firstAudioTrack)
                         .frame(height: 44)
                         .id(room.localParticipant.firstAudioTrack?.id ?? "no-track")  // Force the component to re-render when the track changes
-#if !os(macOS)
+                    #if !os(macOS)
                     // Add extra padding to the visualizer if there's no third button
                         .padding(.trailing, 8)
-#endif
+                    #endif
 
-#if os(macOS)
+                    #if os(macOS)
                     // Only on macOS, show the audio device selector
                     // iOS/visionOS users need to use their control center to change the audio input device
                     AudioDeviceSelector()
-#endif
+                    #endif
                 }
                 .background(.primary.opacity(0.1))
                 .cornerRadius(8)
