@@ -136,8 +136,22 @@ class UIUpdateClient: ObservableObject {
         }
     }
     
+    func updateTextSize(_ textSize: String) {
+        /*
+             Args (str):
+
+             Changes the background based off the input from the user (look at python agent to learn more about the function)
+             Global variable (background color, so when it changes, it will actually affect the ContentView (where it is called)
+             IN THE FUTURE WE CAN ASK IT TO PASS A HEXADECIMAL, SO IT CAN BE ANY COLOR RATHER THAN A SWITCH AND CASE
+        */
+        print(textSize)
+        DispatchQueue.main.async {
+            self.textSize = self.textSize(from: textSize) ?? 24 // black means you won't be able to see anything lol, so its broken
+        }
+    }
+    
     // future function for changing font based on user saying it is too small
-    private func fontSize(from string: String) -> CGFloat {
+    private func textSize(from string: String) -> CGFloat {
         switch string.lowercased() {
         case "small": return 12
         case "medium": return 16
